@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include "include/nlohmann/json.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -19,14 +19,29 @@ int main() {
     json j;
     file >> j;
 
-    map<string, vector<Question>> subjects;
+    map<string, map<string, vector<Question>>> subjects;
 
-    for (auto& element : j.items()) {
-        vector<Question> questions;
-        for (auto& question : element.value()) {
-            questions.push_back({question["question"], question["options"].get<vector<string>>(), question["answer"]});
+    for (auto& subject : j.items()) {
+
+        map<string, vector<Question>> subtests;
+
+        for (auto& subtest : subject.value().items()) {
+
+            vector<Question> questions;
+
+            for (auto& question : subtest.value()) {
+                Question newQuestion;
+                newQuestion.question = question["question"];
+                newQuestion.options = question["options"].get<vector<string>>();
+                newQuestion.answer = question["answer"];
+
+                questions.push_back(newQuestion);
+            }
+
+            subtests[subtest.key()] = questions;
         }
-        subjects[element.key()] = questions;
+
+        subjects[subject.key()] = subtests;
     }
 
     cout << "Select subject:\n";
@@ -42,8 +57,21 @@ int main() {
     advance(it, selected_subject - 1);
     cout << "You selected " << it->first << "\n";
 
+    cout << "Select subtest:\n";
+    i = 1;
+    for (const auto& subtest : it->second) {
+        cout << i++ << ") " << subtest.first << "\n";
+    }
+
+    int selected_subtest;
+    cin >> selected_subtest;
+
+    auto it_subtest = it->second.begin();
+    advance(it_subtest, selected_subtest - 1);
+    cout << "You selected " << it_subtest->first << "\n";
+
     int score = 0;
-    for (const auto& question : it->second) {
+    for (const auto& question : it_subtest->second) {
         cout << question.question << "\n";
         for (int i = 0; i < question.options.size(); i++) {
             cout << i+1 << ") " << question.options[i] << "\n";
@@ -55,7 +83,7 @@ int main() {
         }
     }
 
-    cout << "Your final score is " << score << "/" << it->second.size() << "\n";
+    cout << "Your final score is " << score << "/" << it_subtest->second.size() << "\n";
 
     cout << "Press ENTER to exit...";
     cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
