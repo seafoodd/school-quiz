@@ -3,5 +3,5 @@
 Windows:
 Run the quiz.exe
 
-Linux/macOS
+Linux/macOS:
 Type ```./quiz```
